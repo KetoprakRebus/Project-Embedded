@@ -1,14 +1,14 @@
-#define BLYNK_TEMPLATE_ID "TMPL6qNLyA5xS"
-#define BLYNK_TEMPLATE_NAME "UAP"
-#define BLYNK_AUTH_TOKEN "VEqfVnpwF8SXLjzxLELup7wl8fF8fVxy"
+#define BLYNK_TEMPLATE_ID "TMPL6Nzswj4lM"
+#define BLYNK_TEMPLATE_NAME "uap"
+#define BLYNK_AUTH_TOKEN "YTeeyw9xnIBfDyZsch3jD_jBkJls9BHL"
 
 #include <WiFi.h>
 #include <BlynkSimpleEsp32.h>
 #include <DHT.h>
 #include <ESP32Servo.h>
 
-char ssid[] = "hehey";
-char pass[] = "manda12345";
+char ssid[] = "heng";
+char pass[] = "Hengky123";
 
 #define DHTPIN 4
 #define DHTTYPE DHT11
