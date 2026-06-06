@@ -1,33 +1,24 @@
 #include "DHT.h"
 
-// ======================
 // PIN KOMPONEN ARDUINO UNO
-// ======================
 #define SOIL_PIN A0       // Soil moisture AO ke A0
 #define DHT_PIN 4         // DATA DHT11/DHT22 ke D4
 #define RELAY_PIN 7       // IN relay ke D7
 
-// ======================
 // TIPE DHT
-// ======================
-#define DHTTYPE DHT11
-// Kalau pakai DHT22, ganti menjadi:
-// #define DHTTYPE DHT22
+// #define DHTTYPE DHT11
+#define DHTTYPE DHT22
 
 DHT dht(DHT_PIN, DHTTYPE);
 
-// ======================
 // RELAY
-// ======================
 // Relay aktif LOW
 #define RELAY_ON LOW
 #define RELAY_OFF HIGH
 
-// ======================
 // BATAS SENSOR ARDUINO UNO
-// ======================
 // Nilai soil Arduino Uno: 0 - 1023
-// Umumnya nilai besar = tanah kering
+// Nilai besar = tanah kering
 // Nilai kecil = tanah basah
 int batasTanahKering = 600;
 int batasTanahBasah = 400;
@@ -47,7 +38,7 @@ void setup() {
   digitalWrite(RELAY_PIN, RELAY_OFF);
 
   Serial.println("Sistem Penyiraman Otomatis Tanaman Cabai");
-  Serial.println("Arduino Uno + Soil Moisture + DHT11/DHT22 + Relay + Pompa");
+  Serial.println("Arduino Uno + Soil Moisture + DHT22 + Relay + Pompa");
 }
 
 void loop() {
@@ -75,24 +66,30 @@ void loop() {
     Serial.println(" %");
   }
 
-  // ======================
-  // KONDISI SENSOR
-  // ======================
-
+  // KONDISI SENSOR TANAH
   bool tanahKering = nilaiTanah > batasTanahKering;
   bool tanahBasah = nilaiTanah < batasTanahBasah;
+  bool tanahNormal = nilaiTanah >= batasTanahBasah && nilaiTanah <= batasTanahKering;
 
+  // KONDISI UDARA
   bool udaraPanasDanKering = false;
 
   if (dhtTerbaca) {
     udaraPanasDanKering = suhu > batasSuhuPanas && kelembapanUdara < batasKelembapanUdaraRendah;
   }
 
-  // ======================
   // LOGIKA POMPA
-  // ======================
+  // Prioritas 1: kalau tanah sudah basah, pompa wajib mati
+  if (tanahBasah) {
+    digitalWrite(RELAY_PIN, RELAY_OFF);
+    pompaNyala = false;
 
-  if ((tanahKering || udaraPanasDanKering) && pompaNyala == false) {
+    Serial.println("Status: TANAH BASAH");
+    Serial.println("Pompa: MATI");
+  }
+
+  // Prioritas 2: kalau tanah kering atau udara panas dan kering, pompa menyala
+  else if ((tanahKering || udaraPanasDanKering) && pompaNyala == false) {
     digitalWrite(RELAY_PIN, RELAY_ON);
     pompaNyala = true;
 
@@ -104,26 +101,24 @@ void loop() {
     }
 
     if (udaraPanasDanKering) {
-      Serial.println("Alasan: Suhu panas dan udara kering");
+      Serial.println("Alasan: Suhu panas dan kelembapan udara rendah");
     }
   }
 
-  else if (tanahBasah && pompaNyala == true) {
-    digitalWrite(RELAY_PIN, RELAY_OFF);
-    pompaNyala = false;
+  // Prioritas 3: kalau pompa sudah menyala, biarkan menyala sampai tanah basah
+  else if (pompaNyala == true) {
+    Serial.println("Status: PENYIRAMAN BERJALAN");
+    Serial.println("Pompa: MASIH MENYALA");
 
-    Serial.println("Status: TANAH SUDAH BASAH");
-    Serial.println("Pompa: MATI");
+    if (tanahNormal) {
+      Serial.println("Keterangan: Tanah belum cukup basah untuk mematikan pompa");
+    }
   }
 
+  // Prioritas 4: kondisi tanah cukup lembap, pompa mati
   else {
-    Serial.println("Status: NORMAL");
-
-    if (pompaNyala) {
-      Serial.println("Pompa: MASIH MENYALA");
-    } else {
-      Serial.println("Pompa: MATI");
-    }
+    Serial.println("Status: NORMAL / CUKUP LEMBAP");
+    Serial.println("Pompa: MATI");
   }
 
   delay(2000);
